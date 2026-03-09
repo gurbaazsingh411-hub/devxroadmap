@@ -35,6 +35,7 @@ const Index = () => {
       for (let attempt = 0; attempt < 3; attempt++) {
         const { error: dbError } = await supabase
           .from("roadmaps")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .insert({ slug: finalSlug, project_idea: idea, result: result as any });
 
         if (!dbError) { saved = true; break; }
@@ -55,7 +56,7 @@ const Index = () => {
       }
 
       navigate(`/r/${finalSlug}`, { state: { result, projectIdea: idea, linkSaved: saved } });
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
       toast.error("Could not generate roadmap. Please try again.");
     } finally {
