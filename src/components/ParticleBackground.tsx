@@ -1,7 +1,7 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 function FloatingParticles() {
   const meshRef = useRef<THREE.Points>(null);
@@ -65,13 +65,16 @@ function FloatingOrbs() {
   );
 }
 
-/* Floating decorative UI "cards" that drift in the background */
+/* Floating decorative UI "cards" that drift in the background and respond to mouse */
 function FloatingUIElement({
   className,
   style,
   delay = 0,
   duration = 20,
   rotateOffset = 0,
+  mouseX,
+  mouseY,
+  parallaxFactor = 1,
   children,
 }: {
   className?: string;
@@ -79,8 +82,14 @@ function FloatingUIElement({
   delay?: number;
   duration?: number;
   rotateOffset?: number;
+  mouseX?: any;
+  mouseY?: any;
+  parallaxFactor?: number;
   children?: React.ReactNode;
 }) {
+  const parallaxX = useTransform(mouseX || useMotionValue(0), [0, 1], [15 * parallaxFactor, -15 * parallaxFactor]);
+  const parallaxY = useTransform(mouseY || useMotionValue(0), [0, 1], [15 * parallaxFactor, -15 * parallaxFactor]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30, rotate: rotateOffset }}
@@ -97,7 +106,11 @@ function FloatingUIElement({
         rotate: { delay, duration: duration * 0.7, repeat: Infinity, ease: "easeInOut" },
       }}
       className={`absolute pointer-events-none select-none ${className}`}
-      style={style}
+      style={{
+        ...style,
+        translateX: parallaxX,
+        translateY: parallaxY,
+      }}
     >
       {children}
     </motion.div>
@@ -105,6 +118,23 @@ function FloatingUIElement({
 }
 
 export function ParticleBackground() {
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+
+  const springConfig = { damping: 25, stiffness: 120 };
+  const smoothMouseX = useSpring(mouseX, springConfig);
+  const smoothMouseY = useSpring(mouseY, springConfig);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX / window.innerWidth);
+      mouseY.set(e.clientY / window.innerHeight);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
+
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
       {/* Gradient blobs */}
@@ -120,6 +150,9 @@ export function ParticleBackground() {
         delay={0.5}
         duration={22}
         rotateOffset={6}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={1.2}
       >
         <div className="w-[320px] rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border/30">
@@ -160,6 +193,9 @@ export function ParticleBackground() {
         delay={1.2}
         duration={25}
         rotateOffset={-12}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={0.8}
       >
         <div className="w-[280px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="p-4 space-y-3">
@@ -191,6 +227,9 @@ export function ParticleBackground() {
         delay={0.8}
         duration={18}
         rotateOffset={3}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={1.5}
       >
         <div className="w-[260px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] p-4 space-y-3">
           <div className="w-20 h-2.5 rounded bg-foreground/10" />
@@ -213,6 +252,9 @@ export function ParticleBackground() {
         delay={1.5}
         duration={24}
         rotateOffset={-6}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={0.6}
       >
         <div className="w-[220px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] p-4 space-y-2.5">
           {[1, 2, 3].map((n) => (
@@ -235,6 +277,9 @@ export function ParticleBackground() {
         delay={2}
         duration={20}
         rotateOffset={2}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={1.1}
       >
         <div className="w-[250px] rounded-2xl border border-border/40 bg-foreground/[0.02] backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center gap-1.5">
@@ -259,15 +304,38 @@ export function ParticleBackground() {
       </FloatingUIElement>
 
       {/* Floating geometric accents */}
-      <FloatingUIElement className="top-[30%] left-[12%] hidden md:block" delay={0.3} duration={16} rotateOffset={45}>
+      <FloatingUIElement
+        className="top-[30%] left-[12%] hidden md:block"
+        delay={0.3}
+        duration={16}
+        rotateOffset={45}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={2}
+      >
         <div className="w-16 h-16 rounded-2xl border border-primary/10 bg-primary/[0.02]" />
       </FloatingUIElement>
 
-      <FloatingUIElement className="top-[70%] right-[15%] hidden md:block" delay={1} duration={19}>
+      <FloatingUIElement
+        className="top-[70%] right-[15%] hidden md:block"
+        delay={1}
+        duration={19}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={1.4}
+      >
         <div className="w-12 h-12 rounded-full border border-accent/10 bg-accent/[0.02]" />
       </FloatingUIElement>
 
-      <FloatingUIElement className="top-[20%] left-[45%] hidden md:block" delay={2.5} duration={21} rotateOffset={12}>
+      <FloatingUIElement
+        className="top-[20%] left-[45%] hidden md:block"
+        delay={2.5}
+        duration={21}
+        rotateOffset={12}
+        mouseX={smoothMouseX}
+        mouseY={smoothMouseY}
+        parallaxFactor={0.5}
+      >
         <div className="w-8 h-8 rounded-lg border border-primary/8 bg-primary/[0.015]" />
       </FloatingUIElement>
 
@@ -283,3 +351,4 @@ export function ParticleBackground() {
     </div>
   );
 }
+
