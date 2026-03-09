@@ -71,24 +71,30 @@ function FloatingUIElement({
   style,
   delay = 0,
   duration = 20,
+  rotateOffset = 0,
   children,
 }: {
   className?: string;
   style?: React.CSSProperties;
   delay?: number;
   duration?: number;
+  rotateOffset?: number;
   children?: React.ReactNode;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 30, rotate: rotateOffset }}
       animate={{
-        opacity: 1,
-        y: [0, -18, 0],
+        opacity: [0, 1, 1],
+        y: [0, -20, 0],
+        x: [0, 12, 0],
+        rotate: [rotateOffset, rotateOffset + 4, rotateOffset - 4, rotateOffset],
       }}
       transition={{
-        opacity: { delay, duration: 1.5 },
+        opacity: { delay, duration: 2 },
         y: { delay, duration, repeat: Infinity, ease: "easeInOut" },
+        x: { delay: delay + 2, duration: duration * 1.3, repeat: Infinity, ease: "easeInOut" },
+        rotate: { delay, duration: duration * 0.7, repeat: Infinity, ease: "easeInOut" },
       }}
       className={`absolute pointer-events-none select-none ${className}`}
       style={style}
@@ -113,8 +119,9 @@ export function ParticleBackground() {
         className="top-[8%] right-[4%] hidden md:block"
         delay={0.5}
         duration={22}
+        rotateOffset={6}
       >
-        <div className="w-[320px] rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm shadow-lg shadow-primary/[0.03] rotate-6 overflow-hidden">
+        <div className="w-[320px] rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border/30">
             <div className="w-2.5 h-2.5 rounded-full bg-destructive/40" />
             <div className="w-2.5 h-2.5 rounded-full bg-intermediate/40" />
@@ -152,8 +159,9 @@ export function ParticleBackground() {
         className="top-[15%] left-[2%] hidden lg:block"
         delay={1.2}
         duration={25}
+        rotateOffset={-12}
       >
-        <div className="w-[280px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] -rotate-12 overflow-hidden">
+        <div className="w-[280px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-16 h-2.5 rounded bg-foreground/10" />
@@ -182,8 +190,9 @@ export function ParticleBackground() {
         className="bottom-[18%] right-[6%] hidden md:block"
         delay={0.8}
         duration={18}
+        rotateOffset={3}
       >
-        <div className="w-[260px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] rotate-3 p-4 space-y-3">
+        <div className="w-[260px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] p-4 space-y-3">
           <div className="w-20 h-2.5 rounded bg-foreground/10" />
           <div className="flex flex-wrap gap-1.5">
             {["React", "Node.js", "SQL", "Auth", "API", "CSS"].map((s) => (
@@ -203,8 +212,9 @@ export function ParticleBackground() {
         className="bottom-[12%] left-[3%] hidden lg:block"
         delay={1.5}
         duration={24}
+        rotateOffset={-6}
       >
-        <div className="w-[220px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] -rotate-6 p-4 space-y-2.5">
+        <div className="w-[220px] rounded-2xl border border-border/40 bg-card/35 backdrop-blur-sm shadow-lg shadow-primary/[0.03] p-4 space-y-2.5">
           {[1, 2, 3].map((n) => (
             <div key={n} className="flex items-center gap-2.5">
               <div className="w-6 h-6 rounded-full border border-primary/20 bg-primary/5 flex items-center justify-center">
@@ -224,8 +234,9 @@ export function ParticleBackground() {
         className="top-[55%] right-[2%] hidden xl:block"
         delay={2}
         duration={20}
+        rotateOffset={2}
       >
-        <div className="w-[250px] rounded-2xl border border-border/40 bg-foreground/[0.02] backdrop-blur-sm shadow-lg shadow-primary/[0.03] rotate-2 overflow-hidden">
+        <div className="w-[250px] rounded-2xl border border-border/40 bg-foreground/[0.02] backdrop-blur-sm shadow-lg shadow-primary/[0.03] overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
             <span className="text-[9px] font-mono text-muted-foreground/30">terminal</span>
@@ -248,16 +259,16 @@ export function ParticleBackground() {
       </FloatingUIElement>
 
       {/* Floating geometric accents */}
-      <FloatingUIElement className="top-[30%] left-[12%] hidden md:block" delay={0.3} duration={16}>
-        <div className="w-16 h-16 rounded-2xl border border-primary/10 rotate-45 bg-primary/[0.02]" />
+      <FloatingUIElement className="top-[30%] left-[12%] hidden md:block" delay={0.3} duration={16} rotateOffset={45}>
+        <div className="w-16 h-16 rounded-2xl border border-primary/10 bg-primary/[0.02]" />
       </FloatingUIElement>
 
       <FloatingUIElement className="top-[70%] right-[15%] hidden md:block" delay={1} duration={19}>
         <div className="w-12 h-12 rounded-full border border-accent/10 bg-accent/[0.02]" />
       </FloatingUIElement>
 
-      <FloatingUIElement className="top-[20%] left-[45%] hidden md:block" delay={2.5} duration={21}>
-        <div className="w-8 h-8 rounded-lg border border-primary/8 rotate-12 bg-primary/[0.015]" />
+      <FloatingUIElement className="top-[20%] left-[45%] hidden md:block" delay={2.5} duration={21} rotateOffset={12}>
+        <div className="w-8 h-8 rounded-lg border border-primary/8 bg-primary/[0.015]" />
       </FloatingUIElement>
 
       {/* Three.js canvas */}
