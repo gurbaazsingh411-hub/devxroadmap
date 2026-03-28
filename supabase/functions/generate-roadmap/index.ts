@@ -71,9 +71,12 @@ For each roadmap step, optionally include a "resources" array with 1-2 URLs to r
       );
 
       if (!geminiResponse.ok) {
-        const errorText = await geminiResponse.text();
-        console.error("Gemini API error:", errorText);
-        throw new Error("Invalid Gemini API Key or API error");
+        const errorData = await geminiResponse.json().catch(() => ({}));
+        console.error("Gemini API error:", errorData);
+        return new Response(JSON.stringify({ error: "Invalid Gemini API Key or API error" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const geminiData = await geminiResponse.json();
@@ -81,7 +84,12 @@ For each roadmap step, optionally include a "resources" array with 1-2 URLs to r
     } else {
       // Fallback/Default call via Lovable Gateway
       const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
-      if (!AI_API_KEY) throw new Error("Please provide a Gemini API Key in the settings.");
+      if (!AI_API_KEY) {
+        return new Response(JSON.stringify({ error: "API Key missing. Please provide a Gemini API Key in the settings." }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -106,12 +114,15 @@ For each roadmap step, optionally include a "resources" array with 1-2 URLs to r
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "AI usage limit reached. Please add credits or use your own Gemini API Key." }), {
+          return new Response(JSON.stringify({ error: "AI usage limit reached. Please use your own Gemini API Key." }), {
             status: 402,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        throw new Error("AI service error");
+        return new Response(JSON.stringify({ error: "AI service error" }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const data = await response.json();
