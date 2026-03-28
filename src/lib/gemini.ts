@@ -30,7 +30,7 @@ export async function generateWithGemini(
   projectIdea: string
 ): Promise<RoadmapResult> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -59,11 +59,22 @@ export async function generateWithGemini(
     const errorData = await response.json().catch(() => ({}));
     console.error("Gemini API Error:", errorData);
 
-    if (response.status === 400 || response.status === 403) {
-      throw new Error("Invalid Gemini API Key. Please check your key and try again.");
+    if (response.status === 400) {
+      const msg = errorData?.error?.message || "";
+      if (msg.includes("API_KEY_INVALID") || msg.includes("API key not valid")) {
+        throw new Error("Invalid API Key. Please check your key at aistudio.google.com");
+      }
+      throw new Error(`Request error: ${msg || "Please try again."}`);
+    }
+    if (response.status === 403) {
+      throw new Error(
+        "API access denied. Please enable the 'Generative Language API' at console.cloud.google.com/apis"
+      );
     }
     if (response.status === 429) {
-      throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+      throw new Error(
+        "Rate limit reached. Try generating a new API key at aistudio.google.com, or wait and try again later."
+      );
     }
     throw new Error(
       `Gemini API error (${response.status}). Please verify your API key is valid.`
