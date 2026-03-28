@@ -65,15 +65,31 @@ const Index = () => {
       navigate(`/r/${finalSlug}`, { state: { result, projectIdea: idea, linkSaved: saved } });
     } catch (e) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : String(e);
       
-      if (errorMessage.toLowerCase().includes("api key")) {
+      // Try to extract the actual error message from the Edge Function response
+      let errorMessage = e instanceof Error ? e.message : String(e);
+      try {
+        // FunctionsHttpError has a `context` property with the Response object
+        const errContext = (e as { context?: Response }).context;
+        if (errContext instanceof Response) {
+          const body = await errContext.json();
+          if (body?.error) errorMessage = body.error;
+        }
+      } catch {
+        // Ignore parse errors
+      }
+      
+      if (
+        errorMessage.toLowerCase().includes("api key") ||
+        errorMessage.toLowerCase().includes("unauthorized") ||
+        errorMessage.toLowerCase().includes("401")
+      ) {
         setShowApiInput(true);
         toast.error("Please configure your Gemini API Key to continue.", {
-          description: "Click the configuration button below to set your key.",
+          description: "Enter your key in the settings below, then try again.",
         });
       } else {
-        toast.error("Could not generate roadmap. Please try again.");
+        toast.error(errorMessage || "Could not generate roadmap. Please try again.");
       }
     } finally {
       setIsLoading(false);
