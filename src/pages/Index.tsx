@@ -12,17 +12,24 @@ import type { RoadmapResult } from "@/types/roadmap";
 import { Route as RouteIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { generateSlug } from "@/lib/slug";
-import { addToHistory } from "@/lib/history";
+import { addToHistory, getApiKey, setApiKey } from "@/lib/history";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [userApiKey, setUserApiKey] = useState(() => getApiKey());
+  const [showApiInput, setShowApiInput] = useState(false);
   const navigate = useNavigate();
+
+  const handleApiKeyChange = (key: string) => {
+    setUserApiKey(key);
+    setApiKey(key);
+  };
 
   const handleSubmit = async (idea: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-roadmap", {
-        body: { projectIdea: idea },
+        body: { projectIdea: idea, userApiKey },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -58,7 +65,16 @@ const Index = () => {
       navigate(`/r/${finalSlug}`, { state: { result, projectIdea: idea, linkSaved: saved } });
     } catch (e) {
       console.error(e);
-      toast.error("Could not generate roadmap. Please try again.");
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      
+      if (errorMessage.toLowerCase().includes("api key")) {
+        setShowApiInput(true);
+        toast.error("Please configure your Gemini API Key to continue.", {
+          description: "Click the configuration button below to set your key.",
+        });
+      } else {
+        toast.error("Could not generate roadmap. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +105,18 @@ const Index = () => {
           </p>
         </motion.div>
 
-        {isLoading ? <LoadingState /> : <HeroInput onSubmit={handleSubmit} isLoading={isLoading} />}
+        {isLoading ? (
+          <LoadingState />
+        ) : (
+          <HeroInput
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            apiKey={userApiKey}
+            onApiKeyChange={handleApiKeyChange}
+            showApiInput={showApiInput}
+            onToggleApiInput={() => setShowApiInput(!showApiInput)}
+          />
+        )}
       </div>
 
       {!isLoading && (

@@ -32,3 +32,11 @@ export function getProgress(slug: string): number[] {
 export function setProgress(slug: string, completed: number[]) {
   localStorage.setItem(`progress_${slug}`, JSON.stringify(completed));
 }
+
+export function getApiKey(): string {
+  return localStorage.getItem("gemini_api_key") || "";
+}
+
+export function setApiKey(key: string) {
+  localStorage.setItem("gemini_api_key", key);
+}
