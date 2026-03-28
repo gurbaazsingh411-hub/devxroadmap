@@ -13,6 +13,7 @@ import { Route as RouteIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { generateSlug } from "@/lib/slug";
 import { addToHistory, getApiKey, setApiKey } from "@/lib/history";
+import { generateWithGemini } from "@/lib/gemini";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,15 +27,19 @@ const Index = () => {
   };
 
   const handleSubmit = async (idea: string) => {
+    if (!userApiKey) {
+      setShowApiInput(true);
+      toast.error("Please enter your Gemini API Key first.", {
+        description: "Get one free at aistudio.google.com",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-roadmap", {
-        body: { projectIdea: idea, userApiKey },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      // Call Gemini API directly from the browser (no Edge Function needed)
+      const result = await generateWithGemini(userApiKey, idea);
 
-      const result = data as RoadmapResult;
       let finalSlug = generateSlug();
 
       // Save to DB before navigating
@@ -65,28 +70,15 @@ const Index = () => {
       navigate(`/r/${finalSlug}`, { state: { result, projectIdea: idea, linkSaved: saved } });
     } catch (e) {
       console.error(e);
-      
-      // Try to extract the actual error message from the Edge Function response
-      let errorMessage = e instanceof Error ? e.message : String(e);
-      try {
-        // FunctionsHttpError has a `context` property with the Response object
-        const errContext = (e as { context?: Response }).context;
-        if (errContext instanceof Response) {
-          const body = await errContext.json();
-          if (body?.error) errorMessage = body.error;
-        }
-      } catch {
-        // Ignore parse errors
-      }
-      
+      const errorMessage = e instanceof Error ? e.message : String(e);
+
       if (
         errorMessage.toLowerCase().includes("api key") ||
-        errorMessage.toLowerCase().includes("unauthorized") ||
-        errorMessage.toLowerCase().includes("401")
+        errorMessage.toLowerCase().includes("invalid")
       ) {
         setShowApiInput(true);
-        toast.error("Please configure your Gemini API Key to continue.", {
-          description: "Enter your key in the settings below, then try again.",
+        toast.error("API Key issue", {
+          description: errorMessage,
         });
       } else {
         toast.error(errorMessage || "Could not generate roadmap. Please try again.");
